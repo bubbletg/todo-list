@@ -1,6 +1,6 @@
 import { createRouter, createWebHashHistory, RouteRecordRaw } from 'vue-router'
 import AppLayout from '@/layout/AppLayout.vue'
-import admin from './modules/admin'
+// import admin from './modules/admin'
 
 export const routes: RouteRecordRaw[] = [
   {
@@ -12,12 +12,41 @@ export const routes: RouteRecordRaw[] = [
         name: 'Home',
         component: () => import('@/views/home/HomeIndex.vue'),
         meta: {
-          title: '首页',
-          icon: 'Menu'
+          title: '待办',
+          icon: 'icon-todo_list'
 
         }
       },
-      admin
+      {
+        path: '/concentration',
+        name: 'Concentration',
+        component: () => import('@/views/concentration/ConcentrationIndex.vue'),
+        meta: {
+          title: '专注',
+          icon: 'icon-gongjulan_dingshi'
+
+        }
+      },
+      {
+        path: '/home',
+        name: 'Home',
+        component: () => import('@/views/home/HomeIndex.vue'),
+        meta: {
+          title: '统计',
+          icon: 'icon-tongjifenxi'
+
+        }
+      },
+      {
+        path: '/home',
+        name: 'Home',
+        component: () => import('@/views/home/HomeIndex.vue'),
+        meta: {
+          title: '个人',
+          icon: 'icon-geren'
+
+        }
+      }
     ]
   },
   {
