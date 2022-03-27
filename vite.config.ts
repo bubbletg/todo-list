@@ -12,6 +12,9 @@ export default defineConfig({
   }), styleImport({
     resolves: [VantResolve()]
   })],
+  server: {
+    host: '0.0.0.0'
+  },
   resolve: {
     alias: {
       '@': path.join(__dirname, 'src')
