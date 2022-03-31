@@ -23,7 +23,6 @@
     v-model:show="isShowPopup"
     class="popup_wrap"
     position="bottom"
-    :style="{ height: '30%' }"
   >
     <AddTodo />
   </Popup>
