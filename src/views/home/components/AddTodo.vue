@@ -5,7 +5,7 @@
       <div class="addtodo_name flex justify-start align-center">
         <span class="addtodo_name_icon" />
         <input
-          v-model="todoName"
+          v-model="name"
           placeholder="准备做什么？"
         >
       </div>
@@ -55,7 +55,7 @@
       <div
         v-show="!isMore"
         class="addtodo_more_btn"
-        @click="()=>{isMore=true}"
+        @click="()=>{isMore=true;}"
       >
         展开更多
       </div>
@@ -71,30 +71,28 @@
 <script lang="ts" setup>
 import { Toast, Field } from 'vant'
 import { ref, reactive } from '@vue/runtime-core'
-interface todoListItem {
-  todoName: string
-  describe: string
-}
+import { Todo } from '@/types'
+import { apiAddTodo } from '@/api/todo'
 // const useEffNameAndDescribe = () => {
 const addTodo = () => {
-  if (todoName.value.trim() === '') {
+  if (name.value.trim() === '') {
     Toast('请输入待办名称！')
     return
   }
-  todoList.push({
-    todoName: todoName.value,
+  apiAddTodo({
+    name: name.value,
     describe: describe.value
   })
-  todoName.value = ''
+  name.value = ''
   describe.value = ''
   localStorage.setItem('todoList', JSON.stringify(todoList))
 }
-const todoList: todoListItem[] = []
-const todoName = ref('')
+const todoList: Todo[] = []
+const name = ref('')
 const describe = ref('')
 // return {
 //   addTodo,
-//   todoName,
+//   name,
 //   describe
 // }
 // }

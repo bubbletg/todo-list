@@ -13,7 +13,21 @@ export default defineConfig({
     resolves: [VantResolve()]
   })],
   server: {
-    host: '0.0.0.0'
+    host: '0.0.0.0',
+    port: 80,
+    proxy: {
+      '/api': {
+        target: ' http://127.0.0.1:7002',
+        changeOrigin: true,
+        rewrite: (path) => path.replace('/api', '')
+
+      }
+      // '/api': {
+      //   target: 'http:/localhost:7002/',
+      //   changeOrigin: true,
+      //   rewrite: (path) => path.replace('/api', '')
+      // }
+    }
   },
   resolve: {
     alias: {
