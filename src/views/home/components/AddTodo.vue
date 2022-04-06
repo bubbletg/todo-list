@@ -71,9 +71,9 @@
 <script lang="ts" setup>
 import { Toast, Field } from 'vant'
 import { ref, reactive } from '@vue/runtime-core'
-import { Todo } from '@/types'
 import { apiAddTodo } from '@/api/todo'
-// const useEffNameAndDescribe = () => {
+
+const emit = defineEmits(['addCallback'])
 const addTodo = () => {
   if (name.value.trim() === '') {
     Toast('请输入待办名称！')
@@ -82,24 +82,17 @@ const addTodo = () => {
   apiAddTodo({
     name: name.value,
     describe: describe.value
+  }).then(() => {
+    emit('addCallback')
   })
   name.value = ''
   describe.value = ''
-  localStorage.setItem('todoList', JSON.stringify(todoList))
 }
-const todoList: Todo[] = []
 const name = ref('')
 const describe = ref('')
-// return {
-//   addTodo,
-//   name,
-//   describe
-// }
-// }
 const isselectTime = ref('')
 const selectTimeList = reactive(['今天', '明天', '选择日期', '没有日期'])
 const isMore = ref(false)
-// useEffNameAndDescribe()
 </script>
 
 <style lang="scss" scoped>

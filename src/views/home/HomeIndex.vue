@@ -1,15 +1,15 @@
 <template>
   <div class="home">
     <div class="home_list">
-      <div
+      <template
         v-for="item in todoList"
         :key="item.id"
-        class="home_list_item"
       >
-        {{
-          item.todoName
-        }}
-      </div>
+        <TodoItem
+          :todo="item"
+          @delete-todo="addCallback"
+        />
+      </template>
     </div>
   </div>
   <!-- 添加 -->
@@ -24,29 +24,35 @@
     class="popup_wrap"
     position="bottom"
   >
-    <AddTodo />
+    <AddTodo
+      @add-callback="addCallback"
+    />
   </Popup>
 </template>
 <script setup lang="ts">
-import { reactive, ref } from '@vue/runtime-core'
+import { Todo } from '@/types'
+import { ref } from '@vue/runtime-core'
 import { Popup } from 'vant'
 import AddTodo from './components/AddTodo.vue'
-interface TodoListItem {
-  todoName:string,
-  id: string | number
+import TodoItem from './components/TodoItem.vue'
+import { apiGetAllTodoList } from '@/api'
+
+// 获得todo 列表
+const todoList = ref<Todo[]>([])
+const getTodoList = () => {
+  apiGetAllTodoList().then(data => {
+    todoList.value = data
+  })
 }
-const todoList: TodoListItem[] = reactive([])
-todoList.push({
-  id: 1,
-  todoName: 'as'
-})
-// const count = 0
-// const addTodo = () => {
-//   count += count
-//   isShowPopup.value = !isShowPopup.value
-// }
 // 是否显示添加弹层
 const isShowPopup = ref(false)
+// 添加todo 回调
+const addCallback = () => {
+  isShowPopup.value = false
+  getTodoList()
+}
+addCallback()
+
 </script>
 
 <style lang="scss">
@@ -60,7 +66,6 @@ const isShowPopup = ref(false)
 .home{
 &_list{
   margin: 10px;
-  background-color: pink;
 }
 }
 .fixed-add{
