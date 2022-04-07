@@ -42,11 +42,7 @@
         :key="item"
         class="addtodo_time_btn"
         :class="isselectTime === item ? 'addtodo_time_btn-active' : ''"
-        @click="
-          () => {
-            isselectTime = item
-          }
-        "
+        @click="selectTime(item)"
       >
         {{ item }}
       </div>
@@ -67,12 +63,54 @@
       </div>
     </div>
   </div>
+  <Calendar
+    v-model:show="isShowCalendar"
+    :show-confirm="false"
+    @confirm="onConfirm"
+  />
 </template>
 <script lang="ts" setup>
-import { Toast, Field } from 'vant'
+import moment from 'moment'
+import { Toast, Field, Calendar } from 'vant'
 import { ref, reactive } from '@vue/runtime-core'
 import { apiAddTodo } from '@/api/todo'
 
+// ----- 下面是选择时间逻辑
+
+const isselectTime = ref('')
+const startTime = ref('')
+const endTime = ref('')
+const selectTimeList = reactive(['今天', '明天', '选择日期', '没有日期'])
+const isShowCalendar = ref(false)
+
+// 通过时间组件选择日期
+const onConfirm = (value: Date) => {
+  isShowCalendar.value = false
+  startTime.value = moment(value).format('YYYY-MM-DD HH:mm:ss')
+  endTime.value = ''
+}
+// 切换时间
+const selectTime = (item: string) => {
+  isselectTime.value = item
+  startTime.value = moment().format('YYYY-MM-DD HH:mm:ss')
+  switch (item) {
+    case '今天':
+      endTime.value = moment().endOf('day').format('YYYY-MM-DD HH:mm:ss')
+      break
+    case '明天':
+      endTime.value = moment().add(1, 'day').endOf('day').format('YYYY-MM-DD HH:mm:ss')
+      break
+    case '选择日期':
+      isShowCalendar.value = true
+      break
+    default: // 默认没有日期
+      startTime.value = ''
+      endTime.value = ''
+      break
+  }
+}
+
+// ----- 下面是添加todo逻辑
 const emit = defineEmits(['addCallback'])
 const addTodo = () => {
   if (name.value.trim() === '') {
@@ -81,7 +119,9 @@ const addTodo = () => {
   }
   apiAddTodo({
     name: name.value,
-    describe: describe.value
+    describe: describe.value,
+    startTime: startTime.value,
+    endTime: endTime.value
   }).then(() => {
     emit('addCallback')
   })
@@ -90,8 +130,8 @@ const addTodo = () => {
 }
 const name = ref('')
 const describe = ref('')
-const isselectTime = ref('')
-const selectTimeList = reactive(['今天', '明天', '选择日期', '没有日期'])
+
+// 是否展开更多
 const isMore = ref(false)
 </script>
 
