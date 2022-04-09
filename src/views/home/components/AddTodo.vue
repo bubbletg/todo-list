@@ -47,19 +47,115 @@
         {{ item }}
       </div>
     </div>
-    <div class="addtodo_more">
-      <div
-        v-show="!isMore"
-        class="addtodo_more_btn"
-        @click="()=>{isMore=true;}"
-      >
-        展开更多
+    <!-- 添加目标 -->
+    <div class="addtodo_countDown flex flex-column">
+      <div class="flex justify-between align-center">
+        <span
+          v-for="item in list1"
+          :key="item"
+          class="addtodo_countDown_item"
+          :class="list1V === item ? 'addtodo_countDown_item-active' : ''"
+          @click="list1V = item"
+        >{{ item }}</span>
+      </div>
+      <div class="flex justify-between align-center">
+        <span
+          v-for="item in list2"
+          :key="item"
+          class="addtodo_countDown_item list2"
+          :class="list2V === item ? 'addtodo_countDown_item-active' : ''"
+          @click="list2V = item"
+        >{{ item }}</span>
       </div>
       <div
-        v-show="isMore"
-        class="addtodo_more_content"
+        v-show="list2V === '自定义'"
+        class="flex justify-center align-center"
       >
-        11111
+        <input
+          v-model="timeValue"
+          placeholder="请输入"
+          type="number"
+        >分钟
+      </div>
+    </div>
+    <!-- 更多 -->
+    <div
+      v-if="list1V != '倒计时'"
+      class="addtodo_more"
+    >
+      <div
+        v-if="isShow1"
+        class="more"
+      >
+        <div>
+          我想在<span @click="isShowCalendar = true">{{ setTarget }}</span>之前
+        </div>
+        <div>
+          一共完成
+          <input
+            v-model="targetNum"
+            class="targetNum"
+            type="number"
+            placeholder="请输入"
+          >
+          <input
+            v-model="targetUnit"
+            class="unit"
+            @focus="targetUnit = ''"
+          >
+        </div>
+      </div>
+      <div
+        v-else
+        class="more"
+      >
+        <div>
+          <div class="more_repetition">
+            <div class="more_repetition_item flex justify-between align-center">
+              <span
+                v-for="item in ['每天', '每周', '每月', '每年', '艾宾浩斯']"
+                :key="item"
+                :class="setRepetition === item ? 'active' : ''"
+                @click="setRepetition = item"
+              >{{ item }}</span>
+            </div>
+            <div
+              v-if="setRepetition == '每周'"
+              class="more_week_item flex justify-between align-center"
+            >
+              <span
+                v-for="(item, index) in ['一', '二', '三', '四', '五', '六', '七']"
+                :key="item"
+                :class="setweek === index + 1 ? 'active' : ''"
+                @click="setweek = index + 1"
+              >{{ item }}</span>
+            </div>
+            <div
+              v-if="setRepetition == '每月'"
+              class="more_month_item flex justify-center align-center"
+            >
+              每月<input
+                v-model="setMonth"
+                type="number"
+                placeholder="请输入"
+              >号
+            </div>
+          </div>
+        </div>
+        <div>
+          完成
+          <input
+            v-model="targetNum"
+            class="targetNum"
+            type="number"
+            placeholder="请输入"
+          >
+          <input
+            v-model="targetUnit"
+            class="unit"
+            @focus="targetUnit = ''"
+          >
+        </div>
       </div>
     </div>
   </div>
@@ -71,8 +167,8 @@
 </template>
 <script lang="ts" setup>
 import moment from 'moment'
+import { ref, reactive, watchEffect } from '@vue/runtime-core'
 import { Toast, Field, Calendar } from 'vant'
-import { ref, reactive } from '@vue/runtime-core'
 import { apiAddTodo } from '@/api/todo'
 
 // ----- 下面是选择时间逻辑
@@ -88,6 +184,14 @@ const onConfirm = (value: Date) => {
   isShowCalendar.value = false
   startTime.value = moment(value).format('YYYY-MM-DD HH:mm:ss')
   endTime.value = ''
+  // 定目标 设置目标日期时候触发
+  if (isShow1.value) {
+    setTarget.value = moment(value).format('YYYY年MM月DD日')
+  }
+  // 养习惯 设置每年日期时候触发
+  if (setRepetition.value === '每年') {
+    setTarget.value = moment(value).format('YYYY年MM月DD日')
+  }
 }
 // 切换时间
 const selectTime = (item: string) => {
@@ -117,22 +221,132 @@ const addTodo = () => {
     Toast('请输入待办名称！')
     return
   }
+  let timeValueType = 0
+  // 计时
+  switch (list2V.value) {
+    case '25分钟':
+      timeValue.value = 25
+      break
+    case '45分钟':
+      timeValue.value = 45
+      break
+    case '正计时':
+      timeValueType = 3
+      break
+    case '不计时':
+      timeValueType = 4
+      break
+  }
+  // 计时
+  switch (list1V.value) {
+    case '倒计时':
+      timeValueType = 0
+      break
+    case '定目标':
+      timeValueType = 1
+      break
+    case '养习惯':
+      timeValueType = 2
+      break
+  }
+  let repetitionValue: number|undefined = 0
+  let repetitionType: number = 0
+  let repetitionValueTime: Date |null = null
+  let targetTime:Date |null = new Date(setTarget.value)
+  let targetTimeDesc = setTarget.value
+  switch (setRepetition.value) {
+    case '每天':
+      repetitionValue = 0
+      repetitionType = 1
+      break
+    case '每周':
+      repetitionValue = setweek.value
+      repetitionType = 2
+      break
+    case '每月':
+      repetitionType = 3
+      repetitionValue = setMonth.value
+      break
+    case '每年':
+      repetitionType = 4
+      repetitionValue = 365
+      targetTime = null
+      targetTimeDesc = ''
+      repetitionValueTime = new Date(setTarget.value)
+      break
+    case '艾宾浩斯':
+      repetitionType = 5
+      repetitionValue = -1
+      repetitionValueTime = new Date()
+      break
+  }
+
+  // 调用添加方法
   apiAddTodo({
     name: name.value,
     describe: describe.value,
-    startTime: startTime.value,
-    endTime: endTime.value
+    startTime: new Date(),
+    endTime: new Date(),
+    timeValue: timeValue.value,
+    timeValueType,
+    targetTime,
+    targetTimeDesc,
+    repetitionType,
+    repetitionValue,
+    repetitionValueTime,
+    accomplishCount: targetNum.value,
+    accomplishCountType: targetUnit.value
   }).then(() => {
     emit('addCallback')
   })
+  // 重置
+  resetValue()
+}
+function resetValue () {
   name.value = ''
   describe.value = ''
+  list1V.value = '倒计时'
+  list2V.value = '25分钟'
+  timeValue.value = -1
+  setRepetition.value = ''
+  setweek.value = 1
+  setMonth.value = undefined
+  setTarget.value = '设置目标日期'
+  targetNum.value = undefined
+  targetUnit.value = '次'
 }
-const name = ref('')
-const describe = ref('')
+// todo 标题
+const name = ref<string>('')
+// 描述
+const describe = ref<string>('')
 
-// 是否展开更多
-const isMore = ref(false)
+const list1 = ref<string[]>(['倒计时', '定目标', '养习惯'])
+const list1V = ref<string>('倒计时')
+const list2 = ref<string[]>(['25分钟', '45分钟', '自定义', '正计时', '不计时'])
+const list2V = ref<string>('25分钟')
+const timeValue = ref<number>()
+
+const isShow1 = ref(true)
+const setRepetition = ref<string>('')
+const setweek = ref<number>(1)
+const setMonth = ref<number>()
+const setTarget = ref<string>('设置目标日期')
+const targetNum = ref<number>()
+const targetUnit = ref<string>('次')
+
+watchEffect(() => {
+  if (list1V.value === '定目标') {
+    isShow1.value = true
+  }
+  if (list1V.value === '养习惯') {
+    isShow1.value = false
+  }
+  // 打开日历
+  if (setRepetition.value === '每年') {
+    isShowCalendar.value = true
+  }
+})
+
 </script>
 
 <style lang="scss" scoped>
@@ -179,6 +393,26 @@ const isMore = ref(false)
       }
     }
   }
+  .addtodo_countDown {
+    div {
+      margin: 10px;
+    }
+    &_item {
+      margin: 0 9px;
+      padding: 10px 5px;
+      background-color: gray;
+      border-radius: 10px;
+      font-size: 16px;
+      &-active {
+        background-color: $g-blue;
+        color: #fff;
+      }
+    }
+    .list2 {
+      margin: 0 8px;
+      font-size: 10px;
+    }
+  }
   .addtodo_more {
     &_btn {
       display: inline-block;
@@ -191,8 +425,72 @@ const isMore = ref(false)
       background-color: rgb(242, 234, 234);
       color: $g-blue;
     }
-    &_content{
+    &_content {
       height: 100px;
+    }
+  }
+}
+.more {
+  margin: 10px;
+  > div {
+    padding: 10px 0;
+    span {
+      display: inline-block;
+      margin: 2px;
+      background-color: $g-blue;
+      border-radius: 4px;
+      color: #fff;
+    }
+    .targetNum,
+    .unit {
+      margin: 2px;
+      display: inline-block;
+      color: #ccc;
+      background-color: $g-blue;
+      border-radius: 4px;
+      width: 80px;
+    }
+    .unit {
+      font-size: 12px;
+      width: 30px;
+    }
+    .more_repetition {
+      &_item,
+      .more_week_item {
+        background-color: #fff;
+        border: 1px solid $g-blue;
+        border-radius: 10px;
+        font-size: 16px;
+        span {
+          padding: 5px 10px;
+          display: inline-block;
+          background-color: #fff;
+          border-radius: 4px;
+          color: black;
+        }
+        span.active {
+          background-color: $g-blue;
+          color: #fff;
+        }
+      }
+      .more_week_item {
+        background-color: #fff;
+        border: none;
+        font-size: 16px;
+        span {
+          margin-top: 10px;
+          border: 1px solid $g-blue;
+          border-radius: 20px;
+        }
+      }
+      .more_month_item {
+        margin-top: 10px;
+        input {
+          width: 50px;
+          margin: 0 10px;
+          background-color: $g-blue;
+        }
+      }
     }
   }
 }
