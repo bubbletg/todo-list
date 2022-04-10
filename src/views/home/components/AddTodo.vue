@@ -49,7 +49,10 @@
     </div>
     <!-- 添加目标 -->
     <div class="addtodo_countDown flex flex-column">
-      <div class="flex justify-between align-center">
+      <div
+        v-show="isselectTime==='没有日期'"
+        class="flex justify-between align-center"
+      >
         <span
           v-for="item in list1"
           :key="item"
@@ -171,58 +174,100 @@ import { ref, reactive, watchEffect } from '@vue/runtime-core'
 import { Toast, Field, Calendar } from 'vant'
 import { apiAddTodo } from '@/api/todo'
 
-// ----- 下面是选择时间逻辑
-
 const isselectTime = ref('')
-const startTime = ref('')
-const endTime = ref('')
+const predictStartTime = ref<string>('')
+const predictEndTime = ref<string>('')
 const selectTimeList = reactive(['今天', '明天', '选择日期', '没有日期'])
 const isShowCalendar = ref(false)
+const list1 = ref<string[]>(['倒计时', '定目标', '养习惯'])
+const list1V = ref<string>('倒计时')
+const list2 = ref<string[]>(['25分钟', '45分钟', '自定义', '正计时', '不计时'])
+const list2V = ref<string>('25分钟')
+const timeValue = ref<number>()
+const isShow1 = ref(true)
+const setRepetition = ref<string>('')
+const setweek = ref<number>(1)
+const setMonth = ref<number>()
+const setTarget = ref<string>('设置目标日期')
+const targetNum = ref<number>()
+const targetUnit = ref<string>('次')
+
+watchEffect(() => {
+  if (isselectTime.value !== '没有日期') {
+    list1V.value = '倒计时'
+    list2V.value = '25分钟'
+  }
+})
 
 // 通过时间组件选择日期
 const onConfirm = (value: Date) => {
   isShowCalendar.value = false
-  startTime.value = moment(value).format('YYYY-MM-DD HH:mm:ss')
-  endTime.value = ''
+  predictStartTime.value = moment(value).format('YYYY-MM-DD HH:mm:ss')
+  predictEndTime.value = ''
   // 定目标 设置目标日期时候触发
   if (isShow1.value) {
+    predictStartTime.value = moment().format('YYYY-MM-DD HH:mm:ss')
     setTarget.value = moment(value).format('YYYY年MM月DD日')
+    predictEndTime.value = moment(value).format('YYYY-MM-DD HH:mm:ss')
   }
   // 养习惯 设置每年日期时候触发
   if (setRepetition.value === '每年') {
+    predictStartTime.value = moment(value).format('YYYY-MM-DD HH:mm:ss')
     setTarget.value = moment(value).format('YYYY年MM月DD日')
+    predictEndTime.value = moment(value).format('YYYY-MM-DD HH:mm:ss')
   }
 }
 // 切换时间
 const selectTime = (item: string) => {
   isselectTime.value = item
-  startTime.value = moment().format('YYYY-MM-DD HH:mm:ss')
+  predictStartTime.value = moment().format('YYYY-MM-DD HH:mm:ss')
   switch (item) {
     case '今天':
-      endTime.value = moment().endOf('day').format('YYYY-MM-DD HH:mm:ss')
+      predictEndTime.value = moment().endOf('day').format('YYYY-MM-DD HH:mm:ss')
       break
     case '明天':
-      endTime.value = moment().add(1, 'day').endOf('day').format('YYYY-MM-DD HH:mm:ss')
+      predictEndTime.value = moment().add(1, 'day').endOf('day').format('YYYY-MM-DD HH:mm:ss')
       break
     case '选择日期':
       isShowCalendar.value = true
       break
     default: // 默认没有日期
-      startTime.value = ''
-      endTime.value = ''
+      predictStartTime.value = ''
+      predictEndTime.value = ''
       break
   }
 }
 
 // ----- 下面是添加todo逻辑
 const emit = defineEmits(['addCallback'])
+/**
+ * 添加todo
+ *  逻辑说明：
+ * 1.用户选择了时间，并且是今天，明天，选择日期，则不需要设置倒计时，定目标，养习惯
+ *    这个时候的预计开始与预计结束时间为选择的时间
+ * 2.用户选择了没有日期，则需要设置倒计时，定目标，养习惯
+ *    当选择定目标时候，需要设置预计开始时间为当前时间，预计结束时间为选择的目标时间
+ *    当用户选择的是养习惯时候，需要设置预计开始时间为当前设置的开始时间，预计结束时间为选择的结束时间
+ *
+ */
 const addTodo = () => {
   if (name.value.trim() === '') {
     Toast('请输入待办名称！')
     return
   }
   let timeValueType = 0
-  // 计时
+
+  switch (list1V.value) {
+    case '倒计时':
+      timeValueType = 0
+      break
+    case '定目标':
+      timeValueType = 1
+      break
+    case '养习惯':
+      timeValueType = 2
+      break
+  }
   switch (list2V.value) {
     case '25分钟':
       timeValue.value = 25
@@ -237,23 +282,9 @@ const addTodo = () => {
       timeValueType = 4
       break
   }
-  // 计时
-  switch (list1V.value) {
-    case '倒计时':
-      timeValueType = 0
-      break
-    case '定目标':
-      timeValueType = 1
-      break
-    case '养习惯':
-      timeValueType = 2
-      break
-  }
+
   let repetitionValue: number|undefined = 0
   let repetitionType: number = 0
-  let repetitionValueTime: Date |null = null
-  let targetTime:Date |null = new Date(setTarget.value)
-  let targetTimeDesc = setTarget.value
   switch (setRepetition.value) {
     case '每天':
       repetitionValue = 0
@@ -270,14 +301,10 @@ const addTodo = () => {
     case '每年':
       repetitionType = 4
       repetitionValue = 365
-      targetTime = null
-      targetTimeDesc = ''
-      repetitionValueTime = new Date(setTarget.value)
       break
     case '艾宾浩斯':
       repetitionType = 5
       repetitionValue = -1
-      repetitionValueTime = new Date()
       break
   }
 
@@ -285,15 +312,14 @@ const addTodo = () => {
   apiAddTodo({
     name: name.value,
     describe: describe.value,
-    startTime: new Date(),
-    endTime: new Date(),
-    timeValue: timeValue.value,
+    predictStartTime: predictStartTime.value,
+    predictEndTime: predictEndTime.value,
+    startTime: predictStartTime.value,
+    endTime: predictEndTime.value,
+    timeValue: timeValue.value ? timeValue.value : 0,
     timeValueType,
-    targetTime,
-    targetTimeDesc,
     repetitionType,
     repetitionValue,
-    repetitionValueTime,
     accomplishCount: targetNum.value,
     accomplishCountType: targetUnit.value
   }).then(() => {
@@ -303,11 +329,12 @@ const addTodo = () => {
   resetValue()
 }
 function resetValue () {
+  isselectTime.value = ''
   name.value = ''
   describe.value = ''
   list1V.value = '倒计时'
   list2V.value = '25分钟'
-  timeValue.value = -1
+  timeValue.value = undefined
   setRepetition.value = ''
   setweek.value = 1
   setMonth.value = undefined
@@ -319,20 +346,6 @@ function resetValue () {
 const name = ref<string>('')
 // 描述
 const describe = ref<string>('')
-
-const list1 = ref<string[]>(['倒计时', '定目标', '养习惯'])
-const list1V = ref<string>('倒计时')
-const list2 = ref<string[]>(['25分钟', '45分钟', '自定义', '正计时', '不计时'])
-const list2V = ref<string>('25分钟')
-const timeValue = ref<number>()
-
-const isShow1 = ref(true)
-const setRepetition = ref<string>('')
-const setweek = ref<number>(1)
-const setMonth = ref<number>()
-const setTarget = ref<string>('设置目标日期')
-const targetNum = ref<number>()
-const targetUnit = ref<string>('次')
 
 watchEffect(() => {
   if (list1V.value === '定目标') {
