@@ -7,6 +7,11 @@
             props.todo.name
           }}
         </div>
+        <div class="todo_describe">
+          {{
+            props.todo.describe
+          }}
+        </div>
       </div>
       <template #right>
         <Button
@@ -57,10 +62,15 @@ const deleteTodo = (id) => {
   border-radius: 10px;
   border-bottom: 1px solid $g-blue;
   border-top: 1px solid $g-blue;
-  .todo_name {
+  .todo_name,
+  .todo_describe {
     height: 30px;
     line-height: 30px;
     padding-left: 10px;
+  }
+  .todo_describe {
+    color:gray;
+    font-size:12px;
   }
 }
 </style>
