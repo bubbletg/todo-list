@@ -1,4 +1,7 @@
 
+/**
+ * todo 基础类型
+ */
 export interface Todo {
   id?: number;
   name: string; // 标题
@@ -14,3 +17,23 @@ export interface Todo {
   repetitionType?: number; // 重复类型 0 不重复，1 每天，2 每周，3 每月，4 每年，5 艾宾浩斯
   repetitionValue?: number; // 重复值 0 每天，每周：1星期一 2星期二...，每月，365每年，-1 艾宾浩斯
 }
+
+// /**
+//  * todo 重复类型枚举
+//  */
+// export enum RepetitionType {
+//   '不重复' = 0,
+//   '每天' = 1,
+//   '每周' = 2,
+//   '每月' = 3,
+//   '每年' = 4,
+//   '艾宾浩斯' = 5
+// }
+
+// export enum TimeValueType {
+//   '倒计时' = 0,
+//   '定目标' = 1,
+//   '养习惯' = 2,
+//   '正向计时' = 3,
+//   '不计时' = 4
+// }
